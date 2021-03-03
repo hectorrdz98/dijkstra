@@ -85,10 +85,11 @@
                     </label>
                     <div class="field has-addons">
                         <div class="control">
-                            <input class="input" type="text" placeholder="Destination...">
+                            <input id="destinationInput" class="input" value="R3"
+                                type="text" placeholder="Destination...">
                         </div>
                         <p class="control">
-                            <a class="button is-danger">
+                            <a id="setDestinationBtn" class="button is-danger">
                                 Set
                             </a>
                         </p>
@@ -100,7 +101,7 @@
 </body>
 <script>
     var canvasDiv = document.getElementById("canvas")
-    var routerImg
+    var routerImg = []
 
     class Node {
         constructor (name, x, y) {
@@ -110,6 +111,7 @@
             this.currentWeight = 0
             this.bestPath = []
             this.visitors = []
+            this.best = false
         }
     }
 
@@ -118,6 +120,7 @@
             this.weight = weight
             this.origin = origin
             this.destination = destination
+            this.color = "#0078aa"
         }
     }
 
@@ -150,11 +153,20 @@
         }
     })
 
+    $("#setDestinationBtn").click(function () {
+        let destinationR = $("#destinationInput").val()
+        if (destinationR != '') {
+            traceBestPath(destinationR)
+        }
+    })
+
     function setup() {
         let canvas = createCanvas(canvasDiv.offsetWidth, canvasDiv.offsetHeight)
         canvas.parent("canvas")
-        routerImg = new Image()
-        routerImg.src = "router.png"
+        routerImg[0] = new Image()
+        routerImg[0].src = "router.png"
+        routerImg[1] = new Image()
+        routerImg[1].src = "router_green.png"
         background("#f8fbfc")
     }
 
@@ -162,7 +174,7 @@
         clear()
         push()
         nodes.forEach(node => {
-            drawingContext.drawImage(routerImg, node.x, node.y, 50, 40)
+            drawingContext.drawImage(routerImg[node.best ? 1 : 0], node.x, node.y, 50, 40)
             textSize(14)
             fill(255)
             textAlign(CENTER, CENTER)
@@ -183,13 +195,13 @@
         pop()
         push()
         routes.forEach(route => {
-            stroke("#0078aa")
+            stroke(route.color)
             strokeWeight(5)
             let r1Pos = [route.origin.x + (route.origin.x < route.destination.x ? 50 : -2), route.origin.y + 25]
             let r2Pos = [route.destination.x + (route.destination.x < route.origin.x ? 50 : -2), route.destination.y + 25]
             line(r1Pos[0], r1Pos[1], r2Pos[0], r2Pos[1])
             noStroke()
-            fill("#0078aa")
+            fill(route.color)
             rect(
                 ((r1Pos[0] + r2Pos[0]) / 2) - 15 - route.weight.toString().length, 
                 ((r1Pos[1] + r2Pos[1]) / 2) - 12.5, 
@@ -236,7 +248,7 @@
 
     function getNodeClicked(x, y) {
         for (let i = 0; i < nodes.length; i++) {
-            const node = nodes[i];
+            const node = nodes[i]
             if (node.x <= x && x <= node.x + 50 && 
                 node.y <= y && y <= node.y + 40) return node
         }
@@ -245,7 +257,7 @@
 
     function getRouterByName(name) {
         for (let i = 0; i < nodes.length; i++) {
-            const node = nodes[i];
+            const node = nodes[i]
             if (node.name == name) return node
         }
         return null
@@ -276,17 +288,51 @@
             if (route.origin == currentNode && 
                 !currentNode.visitors.includes(route.destination)) {
                 route.destination.visitors.push(currentNode)
+                updateWeightAndBestPath(currentNode, route.destination, route)
                 if (!nodesList.includes(route.destination)) {
                     nodesList.push(route.destination)
                 }
             } else if (route.destination == currentNode && 
                 !currentNode.visitors.includes(route.origin)) {
                 route.origin.visitors.push(currentNode)
+                updateWeightAndBestPath(currentNode, route.destination, route)
                 if (!nodesList.includes(route.origin)) {
                     nodesList.push(route.origin)
                 }
             }
         })
+    }
+    
+    function updateWeightAndBestPath(currentNode, destinationNode, currentRoute) {
+        let newWeight = currentNode.currentWeight + currentRoute.weight
+        if (destinationNode.currentWeight == 0 || newWeight < destinationNode.currentWeight) {
+            destinationNode.currentWeight = newWeight
+            destinationNode.bestPath = currentNode.bestPath.concat([currentNode])
+        }
+    }
+
+    function getRouteBetween(origin, destination) {
+        for (let i = 0; i < routes.length; i++) {
+            const route = routes[i]
+            if ((route.origin == origin && route.destination == destination) ||
+                (route.origin == destination && route.destination == origin)) return route
+        }
+        return null
+    }
+
+    function traceBestPath(destinationRName) {
+        let destinationR = getRouterByName(destinationRName)
+        let bestPath = destinationR.bestPath.concat([destinationR])
+        for (let i = 0; i < (bestPath.length - 1); i++) {
+            const origin = bestPath[i]
+            const destination = bestPath[i + 1]
+            const route = getRouteBetween(origin, destination)
+            if (route) {
+                origin.best = true
+                destination.best = true
+                route.color = "#087857"
+            }
+        }
     }
 </script>
 </html>
