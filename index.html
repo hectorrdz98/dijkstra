@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dijkstra</title>
+    <link rel="stylesheet" href="bulma.min.css">
+    <script src="jquery.min.js"></script>
+    <script src="p5.min.js"></script>
+    <style>
+        * {
+            margin: 0px;
+            padding: 0px;
+        }
+        html {
+            overflow-y: hidden;
+        }
+        .main-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        #canvas {
+            width: 100%;
+            height: calc(100vh - 250px);
+        }
+        #footer {
+            width: 100%;
+            height: 250px;
+            background-color: #101927;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div id="canvas"></div>
+        <div id="footer">
+            <div class="field">
+                <label class="label has-text-white">
+                    Add new path
+                </label>
+                <div class="field is-grouped">
+                    <div class="control">
+                        <input id="routeR1Input" class="input" value="R0"
+                            type="text" placeholder="Router #1...">
+                    </div>
+                    <div class="control">
+                        <input id="routeR2Input" class="input" value="R1"
+                            type="text" placeholder="Router #2...">
+                    </div>
+                    <div class="control">
+                        <input id="routeWeightInput" class="input" value="2"
+                            type="text" placeholder="Weight...">
+                    </div>
+                    <p class="control">
+                        <a id="addRouteBtn" class="button is-info">
+                            Create
+                        </a>
+                    </p>
+                </div>
+            </div>
+            <div class="field is-grouped">
+                <div class="control">
+                    <label class="label has-text-white">
+                        Set origin
+                    </label>
+                    <div class="field has-addons">
+                        <div class="control">
+                            <input id="originInput" class="input" value="R0"
+                                type="text" placeholder="Origin...">
+                        </div>
+                        <p class="control">
+                            <a id="setOriginBtn" class="button is-danger">
+                                Set
+                            </a>
+                        </p>
+                    </div>
+                </div>
+                <div class="control">
+                    <label class="label has-text-white">
+                        Set destination
+                    </label>
+                    <div class="field has-addons">
+                        <div class="control">
+                            <input class="input" type="text" placeholder="Destination...">
+                        </div>
+                        <p class="control">
+                            <a class="button is-danger">
+                                Set
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    var canvasDiv = document.getElementById("canvas")
+    var routerImg
+
+    class Node {
+        constructor (name, x, y) {
+            this.name = name
+            this.x = x
+            this.y = y
+            this.currentWeight = 0
+            this.bestPath = []
+            this.visitors = []
+        }
+    }
+
+    class Route {
+        constructor (weight, origin, destination) {
+            this.weight = weight
+            this.origin = origin
+            this.destination = destination
+        }
+    }
+
+    var nodes = [
+        new Node("R0", 78, 293),
+        new Node("R1", 292, 193),
+        new Node("R2", 281, 471),
+        new Node("R3", 553, 320)
+    ]
+    var routes = [
+        new Route(2, nodes[0], nodes[1]),
+        new Route(4, nodes[0], nodes[2]),
+        new Route(6, nodes[1], nodes[3]),
+        new Route(3, nodes[2], nodes[3])
+    ]
+
+    $("#addRouteBtn").click(function () {
+        let dataR1 = $("#routeR1Input").val()
+        let dataR2 = $("#routeR2Input").val()
+        let weight = $("#routeWeightInput").val()
+        if (dataR1 != '' && dataR2 != '' && weight != '') {
+            addNewRoute(weight, dataR1, dataR2)
+        }
+    })
+
+    $("#setOriginBtn").click(function () {
+        let originR = $("#originInput").val()
+        if (originR != '') {
+            adjustWeights(originR)
+        }
+    })
+
+    function setup() {
+        let canvas = createCanvas(canvasDiv.offsetWidth, canvasDiv.offsetHeight)
+        canvas.parent("canvas")
+        routerImg = new Image()
+        routerImg.src = "router.png"
+        background("#f8fbfc")
+    }
+
+    function draw() {
+        clear()
+        push()
+        nodes.forEach(node => {
+            drawingContext.drawImage(routerImg, node.x, node.y, 50, 40)
+            textSize(14)
+            fill(255)
+            textAlign(CENTER, CENTER)
+            text(
+                node.name, 
+                node.x + 25, 
+                node.y + 31
+            )
+            fill(0)
+            text(
+                node.currentWeight, 
+                node.x + (node.currentWeight.toString().length * 2), 
+                node.y - 22,
+                50,
+                30
+            )
+        });
+        pop()
+        push()
+        routes.forEach(route => {
+            stroke("#0078aa")
+            strokeWeight(5)
+            let r1Pos = [route.origin.x + (route.origin.x < route.destination.x ? 50 : -2), route.origin.y + 25]
+            let r2Pos = [route.destination.x + (route.destination.x < route.origin.x ? 50 : -2), route.destination.y + 25]
+            line(r1Pos[0], r1Pos[1], r2Pos[0], r2Pos[1])
+            noStroke()
+            fill("#0078aa")
+            rect(
+                ((r1Pos[0] + r2Pos[0]) / 2) - 15 - route.weight.toString().length, 
+                ((r1Pos[1] + r2Pos[1]) / 2) - 12.5, 
+                30 + (route.weight.toString().length * 2), 
+                25
+            )
+            fill(255)
+            textAlign(CENTER, CENTER)
+            text(route.weight, ((r1Pos[0] + r2Pos[0]) / 2) - 15 - route.weight.toString().length, 
+                ((r1Pos[1] + r2Pos[1]) / 2) - 12.5, 
+                30 + (route.weight.toString().length * 2), 
+                25)
+        });
+        pop()
+    }
+
+    function mouseClicked() {
+        if (mouseY < canvasDiv.offsetHeight) {
+            let nodeOver = getNodeClicked(mouseX, mouseY)
+            if (nodeOver) {
+                const index = nodes.indexOf(nodeOver)
+                nodes.splice(index, 1)
+            } else {
+                nodes.push(new Node(getNextName(), mouseX, mouseY))
+            }
+        }
+    }
+
+    function getNextName() {
+        let current = 0
+        while (true) {
+            let check = true
+            for (let i = 0; i < nodes.length; i++) {
+                if (nodes[i].name == 'R' + current) {
+                    check = false
+                    break
+                }
+            }
+            if (check) break
+            current++
+        }
+        return 'R' + current
+    }
+
+    function getNodeClicked(x, y) {
+        for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            if (node.x <= x && x <= node.x + 50 && 
+                node.y <= y && y <= node.y + 40) return node
+        }
+        return null
+    }
+
+    function getRouterByName(name) {
+        for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            if (node.name == name) return node
+        }
+        return null
+    }
+
+    function addNewRoute(weight, nameR1, nameR2) {
+        let R1 = getRouterByName(nameR1)
+        let R2 = getRouterByName(nameR2)
+        if (R1 && R2 && R1 != R2) {
+            routes.push(new Route(parseInt(weight), R1, R2))
+        } else {
+            alert("Specified nodes not found")
+        }
+    }
+
+    function adjustWeights(originRName) {
+        let originR = getRouterByName(originRName)
+        let needToVisit = [originR]
+        while (needToVisit.length > 0) {
+            appendNeighbors(needToVisit)
+            needToVisit.splice(0, 1)
+        }
+    }
+
+    function appendNeighbors(nodesList) {
+        let currentNode = nodesList[0]
+        routes.forEach(route => {
+            if (route.origin == currentNode && 
+                !currentNode.visitors.includes(route.destination)) {
+                route.destination.visitors.push(currentNode)
+                if (!nodesList.includes(route.destination)) {
+                    nodesList.push(route.destination)
+                }
+            } else if (route.destination == currentNode && 
+                !currentNode.visitors.includes(route.origin)) {
+                route.origin.visitors.push(currentNode)
+                if (!nodesList.includes(route.origin)) {
+                    nodesList.push(route.origin)
+                }
+            }
+        })
+    }
+</script>
+</html>
