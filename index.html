@@ -69,7 +69,7 @@
                     </label>
                     <div class="field has-addons">
                         <div class="control">
-                            <input id="originInput" class="input" value="R4"
+                            <input id="originInput" class="input"
                                 type="text" placeholder="Origin...">
                         </div>
                         <p class="control">
@@ -124,21 +124,8 @@
         }
     }
 
-    var nodes = [
-        new Node("R0", 165, 254),
-        new Node("R1", 458, 212),
-        new Node("R2", 438, 375),
-        new Node("R3", 190, 486),
-        new Node("R4", 629, 514)
-    ]
-    var routes = [
-        new Route(2, nodes[0], nodes[1]),
-        new Route(3, nodes[0], nodes[2]),
-        new Route(1, nodes[0], nodes[3]),
-        new Route(1, nodes[3], nodes[2]),
-        new Route(1, nodes[4], nodes[2]),
-        new Route(1, nodes[1], nodes[2])
-    ]
+    var nodes = []
+    var routes = []
 
     $("#addRouteBtn").click(function () {
         let dataR1 = $("#routeR1Input").val()
