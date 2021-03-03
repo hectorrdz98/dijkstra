@@ -44,15 +44,15 @@
                 </label>
                 <div class="field is-grouped">
                     <div class="control">
-                        <input id="routeR1Input" class="input" value="R0"
+                        <input id="routeR1Input" class="input"
                             type="text" placeholder="Router #1...">
                     </div>
                     <div class="control">
-                        <input id="routeR2Input" class="input" value="R1"
+                        <input id="routeR2Input" class="input"
                             type="text" placeholder="Router #2...">
                     </div>
                     <div class="control">
-                        <input id="routeWeightInput" class="input" value="2"
+                        <input id="routeWeightInput" class="input"
                             type="text" placeholder="Weight...">
                     </div>
                     <p class="control">
@@ -69,7 +69,7 @@
                     </label>
                     <div class="field has-addons">
                         <div class="control">
-                            <input id="originInput" class="input" value="R0"
+                            <input id="originInput" class="input" value="R4"
                                 type="text" placeholder="Origin...">
                         </div>
                         <p class="control">
@@ -85,7 +85,7 @@
                     </label>
                     <div class="field has-addons">
                         <div class="control">
-                            <input id="destinationInput" class="input" value="R3"
+                            <input id="destinationInput" class="input"
                                 type="text" placeholder="Destination...">
                         </div>
                         <p class="control">
@@ -125,16 +125,19 @@
     }
 
     var nodes = [
-        new Node("R0", 78, 293),
-        new Node("R1", 292, 193),
-        new Node("R2", 281, 471),
-        new Node("R3", 553, 320)
+        new Node("R0", 165, 254),
+        new Node("R1", 458, 212),
+        new Node("R2", 438, 375),
+        new Node("R3", 190, 486),
+        new Node("R4", 629, 514)
     ]
     var routes = [
         new Route(2, nodes[0], nodes[1]),
-        new Route(4, nodes[0], nodes[2]),
-        new Route(6, nodes[1], nodes[3]),
-        new Route(3, nodes[2], nodes[3])
+        new Route(3, nodes[0], nodes[2]),
+        new Route(1, nodes[0], nodes[3]),
+        new Route(1, nodes[3], nodes[2]),
+        new Route(1, nodes[4], nodes[2]),
+        new Route(1, nodes[1], nodes[2])
     ]
 
     $("#addRouteBtn").click(function () {
@@ -284,7 +287,9 @@
 
     function appendNeighbors(nodesList) {
         let currentNode = nodesList[0]
+        console.log(currentNode.name)
         routes.forEach(route => {
+            console.log(route.origin.name + " -> " + route.destination.name)
             if (route.origin == currentNode && 
                 !currentNode.visitors.includes(route.destination)) {
                 route.destination.visitors.push(currentNode)
@@ -295,7 +300,7 @@
             } else if (route.destination == currentNode && 
                 !currentNode.visitors.includes(route.origin)) {
                 route.origin.visitors.push(currentNode)
-                updateWeightAndBestPath(currentNode, route.destination, route)
+                updateWeightAndBestPath(currentNode, route.origin, route)
                 if (!nodesList.includes(route.origin)) {
                     nodesList.push(route.origin)
                 }
@@ -308,6 +313,12 @@
         if (destinationNode.currentWeight == 0 || newWeight < destinationNode.currentWeight) {
             destinationNode.currentWeight = newWeight
             destinationNode.bestPath = currentNode.bestPath.concat([currentNode])
+        } else {
+            let possibleNewCurrentWeight = destinationNode.currentWeight + currentRoute.weight
+            if (possibleNewCurrentWeight < currentNode.currentWeight) {
+                currentNode.currentWeight = possibleNewCurrentWeight
+                currentNode.bestPath = destinationNode.bestPath.concat([destinationNode])
+            }
         }
     }
 
